@@ -1,0 +1,1 @@
+change args = parser.parse_args('') -> args = parser.parse_args() in line 141 for usage without jupyter
