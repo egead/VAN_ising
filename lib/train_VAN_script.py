@@ -9,7 +9,7 @@ import ising; #for energy calculation
 from VAN import VAN; #VAN class
 
 args.beta = 0.44;
-args.L = 16;
+args.L = 32;
 args.max_step = 10000; #number of epochs
 args.batch_size = 1000;
 args.lr = 1e-3; #learning rate
@@ -49,4 +49,4 @@ net = VAN(args.L, 4, 64, 1, 'cuda').to('cuda');
 
 train(net);
 
-torch.save(net.state_dict(), 'L16_VAN_10000.pt');
+torch.save(net.state_dict(), 'L32_VAN_10000_BETA044.pt');
