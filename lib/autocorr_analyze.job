@@ -1,0 +1,10 @@
+#!/bin/bash
+#SBATCH --job-name=van_train
+#SBATCH --output=./slurm_out/autocorr_analysis_slurm.%j.out
+#SBATCH --error=./slurm_out/autocorr_analysis_slurm.%j.err
+#SBATCH --time=24:00:00
+#SBATCH --nodelist=gnode1
+
+
+cd $SLURM_SUBMIT_DIR
+python autocorr_analysis_script.py

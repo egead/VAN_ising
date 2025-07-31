@@ -63,7 +63,6 @@ class NMCMCAnalyzer:
         # Initial state
         current_energy = self.energy_function(config)
         current_log_prob = self.van_model.log_prob(config)
-        current_importance = torch.exp(-self.beta * current_energy - current_log_prob)
         
         for step in range(n_steps):
             step_config = config.clone()
@@ -101,8 +100,12 @@ class NMCMCAnalyzer:
             energies.append(current_energy.cpu().clone())
             log_probs.append(current_log_prob.cpu().clone())
             
-            # Compute importance ratios w(s) = p(s)/q(s) = exp(-βE(s))/q(s)
-            importance = torch.exp(-self.beta * current_energy - current_log_prob)
+            # FIXED: Compute importance ratios w(s) = p(s)/q(s) = exp(-βE(s))/q(s)
+            # Use log-space for numerical stability
+            log_importance = -self.beta * current_energy - current_log_prob
+            # Normalize by subtracting max for numerical stability
+            log_importance = log_importance - torch.max(log_importance)
+            importance = torch.exp(log_importance)
             importance_ratios.append(importance.cpu().clone())
             
             config = step_config
@@ -114,7 +117,8 @@ class NMCMCAnalyzer:
         
         # Convert to arrays/tensors
         configs = torch.stack(configs, dim=0)  # [n_steps, batch_size, ...]
-        energies = torch.stack(energies, dim=0) / configs.shape[-1]**2  # Per spin
+        # FIXED: Remove per-spin normalization - keep total energy
+        energies = torch.stack(energies, dim=0)  # Total energy
         log_probs = torch.stack(log_probs, dim=0)
         importance_ratios = torch.stack(importance_ratios, dim=0)
         
@@ -298,7 +302,7 @@ class NMCMCAnalyzer:
             Dictionary with eigenvalue estimates
         """
         if isinstance(importance_ratios, torch.Tensor):
-            w = importance_ratios.cpu().detach().numpy()#.numpy()
+            w = importance_ratios.cpu().numpy()
         else:
             w = importance_ratios
         
@@ -306,6 +310,7 @@ class NMCMCAnalyzer:
         w_flat = w.flatten()
         w_max = np.max(w_flat)
         
+        # FIXED: Add safety check for zero w_max
         if w_max <= 0:
             return {'lambda_1': 0.0, 'tau_B': np.inf, 'tau_int_B': np.inf}
         
