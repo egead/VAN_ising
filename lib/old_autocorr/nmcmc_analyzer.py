@@ -302,7 +302,7 @@ class NMCMCAnalyzer:
             Dictionary with eigenvalue estimates
         """
         if isinstance(importance_ratios, torch.Tensor):
-            w = importance_ratios.cpu().numpy()
+            w = importance_ratios.cpu().detach().numpy()
         else:
             w = importance_ratios
         

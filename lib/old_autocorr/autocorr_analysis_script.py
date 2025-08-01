@@ -3,7 +3,7 @@ import numpy as np
 from nmcmc_analyzer import NMCMCAnalyzer
 from VAN import VAN
 import ising
-
+torch.cuda.empty_cache()
 def ising_energy(configs):
     """Compute Ising energy using the same function as training"""
     return ising.energy(configs, 'fm', 'sqr', 'periodic')
@@ -11,7 +11,7 @@ def ising_energy(configs):
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 beta = 0.44
 L = 16
-batch_size = 1000
+batch_size = 32
 n_steps = 1000
 
 van_model = VAN(L, 4, 64, 1, device)
