@@ -2,9 +2,8 @@
 #SBATCH --job-name=van_train
 #SBATCH --output=./slurm_out/van_train_slurm.%j.out
 #SBATCH --error=./slurm_out/van_train_slurm.%j.err
-#SBATCH --time=24:00:00
+#SBATCH --time=72:00:00
 #SBATCH --nodelist=gnode1
-
 
 cd $SLURM_SUBMIT_DIR
 python train_VAN_script.py

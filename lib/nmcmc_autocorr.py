@@ -57,7 +57,9 @@ def three_exp_model(t ,  c0, inv_tau0, c1, inv_tau1, c2, inv_tau2 ):
     return one_exp_model(t , c0, inv_tau0 ) + one_exp_model(t , c1, inv_tau1 ) + one_exp_model(t , c2, inv_tau2 ) 
 
 def one_exp_model(t , c0, inv_tau0 ):
-    return c0* np.exp(- inv_tau0* t, dtype='float64') 
+    exponent = -inv_tau0 * t
+    exponent = np.clip(exponent, -700, 700) 
+    return c0 * np.exp(exponent, dtype='float64')
 
 
 def metropolis(beta, list_energy, list_log_prob):
@@ -84,16 +86,17 @@ def metropolis(beta, list_energy, list_log_prob):
     
                         
 def fitting_tau(fitting_range, Gamma_cont, er_Gamma_cont):   
-   
-    ydata = Gamma_cont[fitting_range[0]:fitting_range[1] ]
-    error_ydata= er_Gamma_cont[fitting_range[0]:fitting_range[1] ]
-    xdata= np.arange(fitting_range[0],fitting_range[1])
+    ydata = Gamma_cont[fitting_range[0]:fitting_range[1]]
+    error_ydata = er_Gamma_cont[fitting_range[0]:fitting_range[1]]
+    xdata = np.arange(fitting_range[0], fitting_range[1])
     
-    parameters, pcov = curve_fit(two_exp_model, xdata , ydata, sigma=error_ydata, bounds=([0.,1e-5,0.,1e-5], [1., 20., 1.,20.]) )   
+    p0 = [0.5, 0.1, 0.5, 0.1]  
+    
+    parameters, pcov = curve_fit(two_exp_model, xdata, ydata, 
+                                sigma=error_ydata, p0=p0, maxfev=5000)
     perr = np.sqrt(np.diag(pcov))
-
     c_tau_param = parameters.copy().reshape((2,2))
-    c_tau_param[:,1] = 1/c_tau_param[:,1]
+    c_tau_param[:,1] = 1/np.maximum(c_tau_param[:,1], 1e-10)
 
     perr = perr.reshape((2,2))
     perr= perr[:,1]*c_tau_param[:,1]**2
@@ -113,26 +116,47 @@ def fitting_tau(fitting_range, Gamma_cont, er_Gamma_cont):
     return parameters, c_tau_param[-1]['tau'], c_tau_param[-1]['tau_err']
 
 
-def plot_autocorrel_function(fitting_range,  parameters, Gamma_cont, er_Gamma_cont):
-
-    xdata= np.arange(fitting_range[0],fitting_range[1])     
+def plot_autocorrel_function(fitting_range, parameters, Gamma_cont, er_Gamma_cont, save_name="autocorr_fit.png"):
+    xdata = np.arange(fitting_range[0], fitting_range[1])     
     param2 = parameters
-    plt.plot(xdata, two_exp_model(xdata, *param2), 'r-')
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(xdata, two_exp_model(xdata, *param2), 'r-', label='Two-exp fit', linewidth=2)
+    plt.errorbar(np.arange(Gamma_cont.size), Gamma_cont, yerr=er_Gamma_cont, fmt='.b', 
+                 label='Autocorrelation data', alpha=0.7)
+    
+    plt.xlabel('Lag')
+    plt.ylabel('Autocorrelation')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.title('Autocorrelation Function with Exponential Fit')
+    
+    plt.savefig(save_name, dpi=300, bbox_inches='tight')
+    plt.show()
 
-
-    plt.errorbar(np.arange(Gamma_cont.size), Gamma_cont, yerr=er_Gamma_cont, fmt='.b')
-
-    # ~ print(Gamma_cont)
-
-    plt.show()        
-
+def plot_autocorrel_enhanced(fitting_range, parameters, Gamma_cont, er_Gamma_cont, save_name="autocorr_fit.png"):
+    xdata = np.arange(fitting_range[0], fitting_range[1])     
+    param2 = parameters
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(xdata, two_exp_model(xdata, *param2), 'r-', label='Two-exp fit', linewidth=2)
+    plt.errorbar(np.arange(Gamma_cont.size), Gamma_cont, yerr=er_Gamma_cont, fmt='.b', 
+                 label='Autocorrelation data', alpha=0.7)
+    
+    plt.xlabel('Lag')
+    plt.ylabel('Autocorrelation')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.title('Autocorrelation Function with Exponential Fit')
+    
+    plt.savefig(save_name, dpi=300, bbox_inches='tight')
+    plt.show()
 
 def sample_van_sequence(net, n_samples):
     samples = torch.zeros([n_samples, 1, net.L, net.L])
     
     for step in range(n_samples):
         with torch.no_grad():
-            # Use fast_sampling for VAN class or sample for others
             if hasattr(net, 'fast_sampling'):
                 sample, _ = net.fast_sampling(1)
             else:
@@ -162,7 +186,7 @@ def analyze_van_autocorr(samples, ham, lattice, boundary, L):
     gamma_E, err_gamma_E = autocorr(energies, hist=hist_len)
     gamma_M, err_gamma_M = autocorr(mags, hist=hist_len)
     
-    fitting_range = [2, min(50, len(energies)//8)]
+    fitting_range = [2, min(20, len(energies)//20)]
     
     results = {
         'gamma_E': gamma_E, 'err_gamma_E': err_gamma_E,

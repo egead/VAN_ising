@@ -1,4 +1,0 @@
-/home/egad/VAN_ising/lib/nmcmc_autocorr.py:60: RuntimeWarning: underflow encountered in exp
-  return c0* np.exp(- inv_tau0* t, dtype='float64')
-/home/egad/VAN_ising/lib/nmcmc_autocorr.py:60: RuntimeWarning: underflow encountered in multiply
-  return c0* np.exp(- inv_tau0* t, dtype='float64')

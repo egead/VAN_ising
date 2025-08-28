@@ -8,9 +8,9 @@ import ising
 from VAN import VAN  
 
 args.beta = 0.44
-args.L = 16
+args.L = 128
 args.max_step = 10000  #number of epochs
-args.batch_size = 1000
+args.batch_size = 500
 args.lr = 1e-3  #learning rate
 
 def train(net, epochs=args.max_step, batch_size=args.batch_size, learning_rate=args.lr, beta=args.beta):
@@ -45,4 +45,4 @@ def train(net, epochs=args.max_step, batch_size=args.batch_size, learning_rate=a
 # Initialize the network (replace 'cuda' with 'cpu' if necessary)
 net = VAN(args.L, 4, 64, 1, 'cuda').to('cuda')
 train(net)
-torch.save(net.state_dict(), 'L16_VAN_10000_BETA044.pt')
+torch.save(net.state_dict(), 'L128_VAN_10000_BETA044.pt')
